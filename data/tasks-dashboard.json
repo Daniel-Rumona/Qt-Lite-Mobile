@@ -1,0 +1,26 @@
+[
+    {
+     "id": "1",
+     "name": "Planned Tasks",
+     "amount": "9",
+     "percentage": "42.86"
+    },
+    {
+     "id": "2",
+     "name": "Completed",
+     "amount": "3",
+     "percentage": "14.29"
+    },
+    {
+     "id": "3",
+     "name": "Upcoming",
+     "amount": "2",
+     "percentage": "9.52"
+    },
+    {
+     "id": "4",
+     "name": "Overdue",
+     "amount": "7",
+     "percentage": "33.33"
+    }
+   ]

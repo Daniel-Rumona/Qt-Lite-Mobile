@@ -1,0 +1,17 @@
+[
+  {
+    "id": "1",
+    "name": "Income",
+    "amount": "1,500.00"
+  },
+  {
+    "id": "2",
+    "name": "Expenses",
+    "amount": "850.99"
+  },
+  {
+    "id": "3",
+    "name": "Net Profit",
+    "amount": "200.95"
+  }
+]
