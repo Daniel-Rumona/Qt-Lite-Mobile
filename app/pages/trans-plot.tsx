@@ -36,15 +36,11 @@ const TransPlot = () => {
   };
 
   const navigateBack = () => {
-    router.push("/(tabs)/index"); // Navigate back to the index page
+    router.back(); // Navigate back to the index page
   };
 
   return (
     <View style={styles.container}>
-      {/* Back to Index Button */}
-      <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
-        <Text style={styles.backButtonText}>Back to Index</Text>
-      </TouchableOpacity>
 
       {/* Title */}
       <Text style={styles.title}>Transaction Trends</Text>
@@ -98,23 +94,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 40, // Move content down
   },
-  backButton: {
-    position: "absolute",
-    top: 50, // Position it at the top of the screen
-    left: 20, // Align it to the left
-    backgroundColor: Colors.blue,
-    padding: 10,
-    borderRadius: 5,
-  },
-  backButtonText: {
-    color: Colors.white,
-    fontWeight: "bold",
-  },
   title: {
     color: Colors.white,
     fontSize: 24, // Increased font size
-    marginTop: 60, // Add space after the back button
-    marginBottom: 20,
+    marginTop: 45, // Add space after the back button
+    marginBottom: 30,
     fontWeight: "bold",
     textAlign: "center", // Center the title
   },

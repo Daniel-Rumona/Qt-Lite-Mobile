@@ -13,13 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yoursdvniel.qtlitemobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.yoursdvniel.qtlitemobile"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +38,12 @@
       "eas": {
         "projectId": "921df0e9-64ba-480f-8806-898495b73d4c"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/921df0e9-64ba-480f-8806-898495b73d4c"
     }
   }
 }
