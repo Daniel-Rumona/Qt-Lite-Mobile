@@ -1,79 +1,78 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import React from 'react';
-import Colors from '@/constants/Colors';
-import { Stack, useRouter } from 'expo-router'; // Import useRouter for navigation
-import Transactions from '@/components/Transactions'; // Import the updated transactions
-import { AntDesign } from '@expo/vector-icons'; // Import AntDesign for icons
+// Optimized Transactions.tsx
+import React, { useContext, useState } from 'react'
+import { View, StyleSheet } from 'react-native'
+import { SegmentedButtons } from 'react-native-paper'
+import { ThemeContext } from '@/context/ThemeContext'
+import Header from '@/components/Header'
+import TransactionsList from '@/components/TransactionsList'
+import { colors } from '@/config/theme'
 
-const Page = () => {
-  const router = useRouter(); // Initialize the router for navigation
-
-  const handleAddTransaction = () => {
-    // Navigate to the TransactionForm screen
-    router.push('/pages/TransactionForm');
-  };
-
-  const handleShowPlot = () => {
-    // Navigate to the TransactionPlot screen
-    router.push('/pages/trans-plot');
-  };
+const Transactions = () => {
+  const { theme } = useContext(ThemeContext)
+  const activeColors = colors[theme.mode]
+  const [filter, setFilter] = useState('All')
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
-        {/* Row with "My Transactions", plot button, and "+" button */}
-        <View style={styles.header}>
-          <Text style={styles.text}>My Transactions</Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.plotButton} onPress={handleShowPlot}>
-              <AntDesign name="linechart" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddTransaction}>
-              <AntDesign name="plus" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Vertical list of Transactions */}
-        <Transactions />
+    <View
+      style={[styles.container, { backgroundColor: activeColors.primary[200] }]}
+    >
+      <Header />
+      {/* Filter Buttons */}
+      <SegmentedButtons
+        value={filter}
+        onValueChange={value => setFilter(value)}
+        buttons={[
+          {
+            value: 'All',
+            label: 'All',
+            icon: 'graph',
+            uncheckedColor: activeColors.grey[900],
+            style: {
+              backgroundColor:
+                filter === 'All' ? 'deepskyblue' : activeColors.blueAccent[100],
+              borderColor: 'transparent'
+            }
+          },
+          {
+            value: 'Income',
+            label: 'Income',
+            icon: 'cash-plus',
+            uncheckedColor: activeColors.grey[900],
+            style: {
+              backgroundColor:
+                filter === 'Income'
+                  ? 'deepskyblue'
+                  : activeColors.blueAccent[100],
+              borderColor: 'transparent'
+            }
+          },
+          {
+            value: 'Expense',
+            label: 'Expense',
+            icon: 'cash-minus',
+            uncheckedColor: activeColors.grey[900],
+            style: {
+              backgroundColor:
+                filter === 'Expense'
+                  ? 'deepskyblue'
+                  : activeColors.blueAccent[100],
+              borderColor: 'transparent'
+            }
+          }
+        ]}
+        style={styles.segmentedButtons}
+      />
+      <View style={styles.scrollView}>
+        <TransactionsList filter={filter} />
       </View>
-    </>
-  );
-};
-
-export default Page;
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 50, // Adjust padding to show the text and button at the top
-    backgroundColor: Colors.black,
-  },
-  header: {
-    flexDirection: 'row', // Align items horizontally
-    justifyContent: 'space-between', // Distribute space between text and buttons
-    alignItems: 'center', // Vertically align elements in the center
-    paddingHorizontal: 20,
-    marginBottom: 20, // Space between the header and the transactions list
-  },
-  text: {
-    color: Colors.white,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  buttonContainer: {
-    flexDirection: 'row', // Align buttons horizontally
-  },
-  plotButton: {
-    backgroundColor: "#2196F3", // Blue button for the plot icon
-    padding: 10,
-    borderRadius: 50,
-  },
-  addButton: {
-    backgroundColor: "#4CAF50", // Green button for "+"
-    padding: 10,
-    borderRadius: 50,
-    marginLeft: 10, // Space between the buttons
-  },
-});
+  container: { flex: 1 },
+  scrollView: { padding: 5, paddingBottom: 120 },
+  segmentedButtons: { margin: 10 }
+})
+
+export default Transactions

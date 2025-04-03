@@ -1,69 +1,262 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Colors from "@/constants/Colors";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo
+} from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  ActivityIndicator
+} from 'react-native'
+import { IconButton, Avatar } from 'react-native-paper'
+import { Flex } from '@react-native-material/core'
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import { colors } from '@/config/theme'
+import { ThemeContext } from '@/context/ThemeContext'
+import Colors from '@/constants/Colors'
+import debounce from 'lodash.debounce'
+import { getAuth } from 'firebase/auth'
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from 'firebase/firestore'
 
-const Header = ({ userName }) => {
+const LowStockItem = React.memo(({ product }) => (
+  <View style={styles.lowStockItem}>
+    <Text style={styles.lowStockName}>{product.name}</Text>
+    <Text style={styles.lowStockDetails}>
+      Stock: {product.currentStock} | Threshold:{' '}
+      {product.minimumQuantityThreshold}
+    </Text>
+  </View>
+))
+
+export default function Header () {
+  const { theme } = useContext(ThemeContext)
+  const activeColors = colors[theme.mode]
+  const [businessName, setBusinessName] = useState('')
+  const [lowStockProducts, setLowStockProducts] = useState([])
+  const [showBellModal, setShowBellModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const productsPerPage = 3
+  const router = useRouter()
+  const auth = getAuth()
+  const db = getFirestore()
+  const user = auth.currentUser
+
+  const getInitials = name =>
+    name
+      ? name
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+      : 'QX'
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    const fetchUserData = async () => {
+      try {
+        const userRef = doc(db, `Users/${user.uid}`)
+        const userSnapshot = await getDoc(userRef)
+
+        if (userSnapshot.exists()) {
+          setBusinessName(userSnapshot.data().businessName || 'Business Name')
+        }
+
+        const provisionsRef = collection(db, `Users/${user.uid}/provisions`)
+        const inventoryRef = collection(db, `Users/${user.uid}/inventory`)
+
+        const [provisionsSnapshot, inventorySnapshot] = await Promise.all([
+          getDocs(provisionsRef),
+          getDocs(inventoryRef)
+        ])
+
+        const provisionsData = provisionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        const inventoryData = inventorySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        const lowStock = provisionsData
+          .map(provision => {
+            const matchingInventory = inventoryData.find(
+              item => item.productID === provision.productID
+            )
+            return matchingInventory &&
+              matchingInventory.quantity < provision.minimumQuantityThreshold
+              ? {
+                  ...provision,
+                  currentStock: matchingInventory.quantity
+                }
+              : null
+          })
+          .filter(Boolean)
+
+        setLowStockProducts(lowStock)
+      } catch (error) {
+        console.error('Error fetching data from Firebase:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+
+    const intervalId = setInterval(() => {
+      fetchUserData()
+    }, 5 * 60 * 1000) // Sync every 5 minutes
+
+    return () => clearInterval(intervalId)
+  }, [user])
+
+  const paginatedProducts = useMemo(
+    () =>
+      lowStockProducts.slice(
+        (currentPage - 1) * productsPerPage,
+        currentPage * productsPerPage
+      ),
+    [lowStockProducts, currentPage, productsPerPage]
+  )
+
+  const totalProductPages = Math.ceil(lowStockProducts.length / productsPerPage)
+
+  const handleSearchProducts = useCallback(
+    debounce(query => {
+      const filteredProducts = lowStockProducts.filter(product =>
+        product.name.toLowerCase().includes(query.toLowerCase())
+      )
+      setLowStockProducts(filteredProducts)
+      setCurrentPage(1)
+    }, 300),
+    [lowStockProducts]
+  )
+
+  if (loading) {
+    return <ActivityIndicator size='large' color='deepskyblue' />
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.wrapper}>
-        <View style={styles.userInfoWrapper}>
-          <View style={styles.userTxtWrapper}>
-            {/* Use the user's name dynamically */}
-            <Text style={[styles.userText, { fontSize: 12 }]}>Hi, {userName}</Text>
-            <Text style={[styles.userText, { fontSize: 16 }]}>
-              Welcome To <Text style={styles.boldText}>Quantilytix</Text>
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity onPress={() => {}} style={styles.btnWrapper}>
-          <Text style={styles.btnText}>My Activity</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-};
-
-export default Header;
+    <Flex
+      direction='row'
+      justify='between'
+      style={{
+        padding: 10,
+        backgroundColor: activeColors.primary[500],
+        alignItems: 'center',
+        marginHorizontal: 10,
+        marginVertical: 10,
+        borderRadius: 20,
+        borderCurve: 'continuous'
+      }}
+    >
+      <Avatar.Text
+        label={getInitials(businessName)}
+        size={40}
+        style={{
+          backgroundColor: 'deepskyblue'
+        }}
+      />
+      <Flex
+        direction='column'
+        justify='center'
+        style={{ marginHorizontal: 10 }}
+      >
+        <Text
+          style={{
+            color:
+              theme.mode === 'dark'
+                ? activeColors.primary[900]
+                : activeColors.primary[100],
+            fontWeight: 'bold',
+            fontSize: 18
+          }}
+        >
+          {businessName}
+        </Text>
+      </Flex>
+      <Flex direction='row' justify='center' style={{ gap: 5 }}>
+        <IconButton
+          icon={() => (
+            <AntDesign
+              name='creditcard'
+              size={24}
+              color={activeColors.grey[900]}
+            />
+          )}
+          onPress={() => router.push('/scenes/Transact')}
+          style={{
+            backgroundColor: 'deepskyblue',
+            marginHorizontal: 5,
+            borderRadius: 20
+          }}
+        />
+        <IconButton
+          icon={() => (
+            <>
+              <AntDesign
+                name='bells'
+                size={24}
+                color={activeColors.grey[900]}
+              />
+              {lowStockProducts.length > 0 && (
+                <View style={styles.notificationDot} />
+              )}
+            </>
+          )}
+          onPress={() => setShowBellModal(true)}
+          style={{
+            backgroundColor: 'deepskyblue',
+            marginHorizontal: 5,
+            borderRadius: 20
+          }}
+        />
+      </Flex>
+    </Flex>
+  )
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.black,
+  notificationDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    height: 10,
+    width: 10,
+    backgroundColor: 'red',
+    borderRadius: 5
   },
-  wrapper: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    height: 70,
-    alignItems: "center",
-    paddingHorizontal: 20,
+  lowStockItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd'
   },
-  userInfoWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
+  lowStockName: {
+    fontSize: 16,
+    fontWeight: 'bold'
   },
-  userImg: {
-    height: 50,
-    width: 50,
-    borderRadius: 30,
-  },
-  userTxtWrapper: {
-    marginLeft: 10,
-  },
-  userText: {
-    color: Colors.white,
-  },
-  boldText: {
-    fontWeight: "700",
-  },
-  btnWrapper: {
-    borderColor: "#666",
-    borderWidth: 1,
-    padding: 8,
-    borderRadius: 10,
-  },
-  btnText: {
-    color: Colors.white,
-    fontSize: 12,
-  },
-});
+  lowStockDetails: {
+    fontSize: 14,
+    color: '#666'
+  }
+})

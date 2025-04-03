@@ -1,185 +1,276 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
-import Colors from "@/constants/Colors";
-import { Stack } from "expo-router";
-import { FIRESTORE_DB, FIREBASE_AUTH } from "@/FirebaseConfig"; // Firebase Firestore and Auth import
-import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged } from 'firebase/auth';
-import { AntDesign, Ionicons, FontAwesome5, MaterialIcons, Feather } from "@expo/vector-icons";
-import Header from "@/components/Header";  // Import your custom header component
+import React, { useState, useContext } from 'react'
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Modal,
+  Pressable
+} from 'react-native'
+import { Switch, Text } from 'react-native-paper'
+import { MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import { ThemeContext } from '@/context/ThemeContext' // Import your ThemeContext
+import { colors } from '@/config/theme'
+import Header from '@/components/Header'
 
+const Profile = () => {
+  const { theme, updateTheme } = useContext(ThemeContext) // Access theme and updater from ThemeContext
+  const activeColors = colors[theme.mode] // Get active colors from theme
+  const [themeModalVisible, setThemeModalVisible] = useState(false) // Modal state
+  const router = useRouter()
 
-const Page = () => {
-  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
-  const router = useRouter(); // Initialize the router
-  const [user, setUser] = useState(null); // State for storing user data
-//   const userName = "John Doe"; // Placeholder for dynamically passed user name
-  // Fetch logged-in user's information from Firestore
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(FIREBASE_AUTH, async (authUser) => {
-      if (authUser) {
-        // Fetch the user's details from Firestore
-        const userDocRef = doc(FIRESTORE_DB, 'system_users', authUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser(userDoc.data());
+  const menuOptions = [
+    {
+      group: 'MY ACCOUNT',
+      items: [
+        {
+          title: 'My Details',
+          icon: 'user',
+          iconType: FontAwesome,
+          onPress: () => router.push('/scenes/Profile')
+        },
+        {
+          title: 'Team Members',
+          icon: 'team',
+          iconType: AntDesign,
+          onPress: () => router.push('/scenes/TeamMembers')
+        },
+        {
+          title: 'Product/Service List',
+          icon: 'list',
+          iconType: FontAwesome,
+          onPress: () => router.push('/scenes/Provisions')
+        },
+        {
+          title: 'Customers | Suppliers',
+          icon: 'user',
+          iconType: FontAwesome,
+          onPress: () => router.push('/scenes/CustomersSuppliersForm')
+        },
+        {
+          title: 'My Subscriptions',
+          icon: 'subscriptions',
+          iconType: MaterialIcons,
+          onPress: () => router.push('/scenes/Subscriptions')
+        },
+        {
+          title: 'Theme',
+          icon: 'brightness-6',
+          iconType: MaterialIcons,
+          onPress: () => setThemeModalVisible(true) // Open modal
+        },
+        {
+          title: 'Log Out',
+          icon: 'logout',
+          iconType: AntDesign,
+          onPress: () => router.push('/scenes/LoginForm')
         }
-      } else {
-        // If no user is logged in, redirect to LoginForm
-        router.replace("/pages/LoginForm");
-      }
-    });
-    return () => unsubscribeAuth();
-  }, []);
-  const toggleAiAnalytics = () => {
-    setAiAnalyticsOpen(!aiAnalyticsOpen);
-  };
-
-  const navigateToQuickFix = () => {
-    router.push('/pages/trans-plot'); // Navigate to the new TransPlot screen
-  };
-  const navigateToUploadDocuments = () => {
-    router.push('/pages/UploadDocuments'); // Navigate to the new TransPlot screen
-  };
-  const navigateToLogin = () => {
-    router.push('/pages/LoginForm'); // Navigate to the new TransPlot screen
-  };
-  const navigateToInventory = () => {
-    router.push('/pages/InventoryForm'); // Navigate to the new TransPlot screen
-  };
-  const navigateToProfile = () => {
-    router.push('/pages/MyProfile'); // Navigate to the new TransPlot screen
-  };
+      ]
+    }
+  ]
 
   return (
-    <>
-      <Stack.Screen options={{ header: () => <Header userName={user?.name} /> }} />
-      <View style={styles.container}>
-
-        {/* Sidebar */}
-        <View style={styles.sidebar}>
-          {/* BI Analytics */}
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="analytics-outline" size={20} color="white" />
-            <Text style={styles.menuText}>BI Analytics</Text>
-          </TouchableOpacity>
-
-          {/* AI Analytics with Dropdown */}
-          <TouchableOpacity onPress={toggleAiAnalytics} style={styles.menuItem}>
-            <Ionicons name="logo-android" size={20} color="white" />
-            <Text style={styles.menuText}>AI Analytics</Text>
-          </TouchableOpacity>
-
-          {/* AI Analytics Dropdown */}
-          {aiAnalyticsOpen && (
-            <View style={styles.dropdownContainer}>
-              <TouchableOpacity style={styles.dropdownItem}>
-                <Feather name="tool" size={16} color="white" />
-                <Text style={styles.dropdownText}>Buzzy Helper</Text>
+    <View
+      style={[styles.container, { backgroundColor: activeColors.primary[200] }]}
+    >
+      <Header />
+      <ScrollView contentContainerStyle={styles.scrollView}>
+        {menuOptions.map((group, groupIndex) => (
+          <View key={groupIndex}>
+            <Text
+              style={[styles.groupTitle, { color: activeColors.grey[800] }]}
+            >
+              {group.group}
+            </Text>
+            {group.items.map((item, itemIndex) => (
+              <TouchableOpacity
+                key={itemIndex}
+                style={[
+                  styles.menuOption,
+                  { backgroundColor: activeColors.primary[300] }
+                ]}
+                onPress={item.onPress} // Assign the onPress function
+              >
+                <item.iconType
+                  name={item.icon}
+                  size={24}
+                  style={[styles.icon, { color: 'deepskyblue' }]}
+                />
+                <Text
+                  style={[styles.menuText, { color: activeColors.grey[900] }]}
+                >
+                  {item.title}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.dropdownItem} onPress={navigateToQuickFix}>
-                <Feather name="settings" size={16} color="white" />
-                <Text style={styles.dropdownText}>QuickFix</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            ))}
+          </View>
+        ))}
+      </ScrollView>
 
-          {/* Configure Section */}
-          <Text style={styles.sectionHeader}>CONFIGURE</Text>
+      {/* Theme Modal */}
+      <Modal
+        visible={themeModalVisible}
+        transparent={true}
+        animationType='slide'
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContainer,
+              {
+                backgroundColor:
+                  theme.mode === 'dark'
+                    ? activeColors.primary[500]
+                    : activeColors.primary[100]
+              }
+            ]}
+          >
+            <Text
+              style={[styles.modalTitle, { color: activeColors.grey[900] }]}
+            >
+              Choose Theme
+            </Text>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <MaterialIcons name="business-center" size={20} color="white" />
-            <Text style={styles.menuText}>Departments</Text>
-          </TouchableOpacity>
+            <Pressable
+              style={[
+                styles.themeOption,
+                theme.mode === 'dark' && !theme.system
+                  ? { backgroundColor: activeColors.primary[600] }
+                  : null
+              ]}
+              onPress={() => updateTheme({ mode: 'dark' })}
+            >
+              <MaterialIcons
+                name='brightness-4'
+                size={24}
+                color={'deepskyblue'}
+              />
+              <Text
+                style={[styles.themeText, { color: activeColors.grey[900] }]}
+              >
+                Dark Mode
+              </Text>
+              <Switch
+                value={theme.mode === 'dark' && !theme.system}
+                onValueChange={() => updateTheme({ mode: 'dark' })}
+                color='deepskyblue'
+              />
+            </Pressable>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <FontAwesome5 name="users" size={20} color="white" />
-            <Text style={styles.menuText}>Team Members</Text>
-          </TouchableOpacity>
+            <Pressable
+              style={[
+                styles.themeOption,
+                theme.mode === 'light' && !theme.system
+                  ? { backgroundColor: activeColors.blueAccent[300] }
+                  : null
+              ]}
+              onPress={() => updateTheme({ mode: 'light' })}
+            >
+              <MaterialIcons name='wb-sunny' size={24} color={'deepskyblue'} />
+              <Text
+                style={[styles.themeText, { color: activeColors.grey[900] }]}
+              >
+                Light Mode
+              </Text>
+              <Switch
+                value={theme.mode === 'light' && !theme.system}
+                onValueChange={() => updateTheme({ mode: 'light' })}
+                color='deepskyblue'
+              />
+            </Pressable>
 
-          <TouchableOpacity style={styles.menuItem} onPress={navigateToInventory}>
-            <Ionicons name="cube-outline" size={20} color="white" />
-            <Text style={styles.menuText}>Inventory</Text>
-          </TouchableOpacity>
-
-          {/* Toolbox Section */}
-          <Text style={styles.sectionHeader}>TOOLBOX</Text>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <FontAwesome5 name="file-invoice-dollar" size={20} color="white" />
-            <Text style={styles.menuText}>Invoice/Quote</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem} onPress={navigateToUploadDocuments}>
-            <Ionicons name="cloud-upload-outline" size={20} color="white" />
-            <Text style={styles.menuText}>Documents Upload</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="document-text-outline" size={20} color="white" />
-            <Text style={styles.menuText}>View Documents</Text>
-          </TouchableOpacity>
-
-          {/* Account Section */}
-          <Text style={styles.sectionHeader}>MY ACCOUNT</Text>
-
-          <TouchableOpacity style={styles.menuItem} onPress={navigateToProfile}>
-            <Ionicons name="person-circle-outline" size={20} color="white" />
-            <Text style={styles.menuText}>View Details</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem} onPress={navigateToLogin}>
-            <AntDesign name="logout" size={20} color="white" />
-            <Text style={styles.menuText}>Log Out</Text>
-          </TouchableOpacity>
+            <Pressable
+              style={[
+                styles.themeOption,
+                theme.system
+                  ? { backgroundColor: activeColors.primary[600] }
+                  : null
+              ]}
+              onPress={() => updateTheme({ system: true })}
+            >
+              <MaterialIcons name='settings' size={24} color={'deepskyblue'} />
+              <Text
+                style={[styles.themeText, { color: activeColors.grey[900] }]}
+              >
+                System Default
+              </Text>
+              <Switch
+                value={theme.system}
+                onValueChange={() => updateTheme({ system: true })}
+                color='deepskyblue'
+              />
+            </Pressable>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setThemeModalVisible(false)}
+            >
+              <MaterialIcons name='close' size={24} color='red' />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </>
-  );
-};
-
-export default Page;
+      </Modal>
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: "column",
-    backgroundColor: Colors.black,
-    paddingTop: 40, // Add padding at the top to push the content down
-  },
-  sidebar: {
+  container: { flex: 1 },
+  scrollView: { padding: 20, paddingBottom: 120 },
+  groupTitle: { fontSize: 12, fontWeight: 'bold', marginVertical: 10 },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 15,
+    borderRadius: 12,
+    marginBottom: 8
   },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
+  icon: {
+    marginRight: 10
   },
   menuText: {
-    color: "white",
-    fontSize: 16,
-    marginLeft: 10,
+    fontSize: 16
   },
-  sectionHeader: {
-    color: "#AAA",
-    fontSize: 14,
-    marginVertical: 10,
-    fontWeight: "bold",
-    alignSelf: "center",
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
   },
-  dropdownContainer: {
-    paddingLeft: 30,
+  modalContainer: {
+    width: '80%',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center'
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 18,
+    right: 10
+  },
+  themeOption: {
+    width: '70%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderRadius: 10,
     marginVertical: 5,
+    color: '#fff'
   },
-  dropdownItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 5,
-  },
-  dropdownText: {
-    color: "white",
-    fontSize: 14,
+  themeText: {
+    fontSize: 16,
+    flex: 1,
     marginLeft: 10,
-  },
-});
+    marginRight: 10,
+    textAlign: 'center'
+  }
+})
+
+export default Profile
